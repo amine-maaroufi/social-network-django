@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Posts{% endblock %}
+{% block content %}
+
+
+
+
+   <div class="panel-body">
+            {% for post in posts %}
+
+
+
+
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+
+                            <h2><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+
+                        </div>
+                        <div class="panel-body">
+                            <h2>Author : {{ post.author }}</h2>
+                            <p>{{ post.text|linebreaksbr }}</p>
+                            <p>published: {{ post.published_date }}</p>
+                        </div>
+
+                        <!--  ********************** compter les commentres**********************-->
+                     <a href="{% url 'post_detail' pk=post.pk %}">Comments: {{ post.comments.count }}</a>
+
+                    </div>
+
+                     <!-- ************************************   like button *****************************-->
+                {% with total_likes=post.users_like.count users_like=post.users_like.all %}
+                    <div class="image-info">
+                        <div>
+                    <span class="count">
+                        <span class="total">{{ total_likes }}</span>
+                        like{{ total_likes|pluralize }}
+                    </span>
+                            <a href="#" data-id="{{ post.id }}" data-action="{% if request.user in users_like %}un{% endif %}like" class="like button">
+                                {% if request.user not in users_like %}
+                                    Like
+                                {% else %}
+                                    Unlike
+                                {% endif %}
+                            </a>
+                        </div>
+
+                    </div>
+
+                    <div class="image-likes">
+                        {% for user in image.users_like.all %}
+                            <div>
+                                <img src="{{ user.profile.photo.url }}">
+                                <p>{{ user.first_name }}</p>
+                            </div>
+
+                        {% endfor %}
+                    </div>
+                {% endwith %}
+
+
+
+
+            {% endfor %}
+        </div>
+
+
+{% endblock %}
+
+{% block domready %}
+    $('a.like').click(function(e){
+        e.preventDefault();
+        $.post('{% url "like" %}',
+            {
+                id: $(this).data('id'),
+                action: $(this).data('action')
+            },
+            function(data){
+                if (data['status'] == 'ok')
+                {
+                    var previous_action = $('a.like').data('action');
+
+                    // toggle data-action
+                    $('a.like').data('action', previous_action == 'like' ? 'unlike' : 'like');
+                    // toggle link text
+                    $('a.like').text(previous_action == 'like' ? 'Unlike' : 'Like');
+
+                    // update total likes
+                    var previous_likes = parseInt($('span.count .total').text());
+                    $('span.count .total').text(previous_action == 'like' ? previous_likes + 1 : previous_likes - 1);
+                }
+        });
+
+    });
+{% endblock %}
